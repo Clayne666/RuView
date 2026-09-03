@@ -20,9 +20,17 @@ services:
       #   python scripts/udp-relay.py --listen-port 5005 --forward-port 5006
       #
       # See docs/TROUBLESHOOTING.md §9 for details.
-      - "5005:5005/udp"
+      - "5006:5005/udp"
     environment:
       - RUST_LOG=info
+      - RUVIEW_API_TOKEN=${RUVIEW_API_TOKEN:?set RUVIEW_API_TOKEN in docker/.env}
+      # RUVIEW_UDP_BIND/ALLOW: the CSI UDP receiver defaults to loopback-only.
+      # Docker's port forwarding delivers packets to the container's own
+      # interface (not literally its loopback), so real ESP32 hardware needs
+      # a routable bind. We scope accepted senders to the LAN subnet instead
+      # of using --udp-insecure-lan (see ADR-296 / SECURITY.md).
+      - RUVIEW_UDP_BIND=${RUVIEW_UDP_BIND:-127.0.0.1}
+      - RUVIEW_UDP_ALLOW=${RUVIEW_UDP_ALLOW:-}
       # CSI_SOURCE controls the data source for the sensing server.
       # Options: auto (default) — probe for ESP32 UDP then host WiFi; **fail
       #                           hard with exit 78 if neither is detected**.
